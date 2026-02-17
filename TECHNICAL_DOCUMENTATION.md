@@ -103,6 +103,12 @@ CDA 采用模块化设计，由六个核心模块组成：
    - 检查风险类别的多样性
    - 验证财务影响的量化
 
+5. **News Consistency Validator（新闻一致性验证器）**
+   - 搜索报告期内的环境相关新闻
+   - 提取环境事件（罚款、诉讼、违规等）
+   - 交叉验证披露与新闻的一致性
+   - 识别遗漏和误报以评估可信度
+
 **输出**：`ValidationResult` 对象，包含：
 - 维度得分（0-100）
 - 发现的问题列表（严重/警告/信息）
@@ -113,7 +119,7 @@ CDA 采用模块化设计，由六个核心模块组成：
 
 **评分逻辑**：
 - 加权平均各维度得分
-- 默认权重：一致性 25%、量化 25%、完整性 25%、风险覆盖 25%
+- 默认权重：一致性 20%、量化 20%、完整性 20%、风险覆盖 20%、可信度 20%
 - 支持自定义权重配置
 
 **评级体系**：
@@ -214,7 +220,52 @@ ValidationResult
 └── metadata: 元数据
 ```
 
-#### 3.1.3 ScoredResult（评分结果）
+#### 3.1.3 News Validation Data Models
+```
+NewsArticle
+├── title: 标题
+├── url: 链接
+├── source: 来源
+├── published_date: 发布日期
+├── snippet: 摘要
+├── full_text: 全文（可选）
+└── relevance_score: 相关性得分
+
+EnvironmentalEvent
+├── event_type: 事件类型（fine/lawsuit/accident/regulation/violation/investigation/ngo_report/other）
+├── description: 事件描述
+├── date: 事件日期
+├── severity: 严重程度（critical/high/medium/low）
+├── financial_impact: 财务影响（可选）
+├── source_article: 来源文章
+├── keywords: 关键词
+└── confidence: 提取置信度
+
+Contradiction
+├── contradiction_type: 矛盾类型（omission/misrepresentation/timing_mismatch/magnitude_mismatch）
+├── severity: 严重程度
+├── claim_in_report: 报告中的声明
+├── evidence_from_news: 新闻中的证据
+├── event: 相关事件
+├── impact_on_credibility: 对可信度的影响
+└── recommendation: 改进建议
+
+NewsValidationResult
+├── company_name: 公司名称
+├── report_period_start: 报告期开始
+├── report_period_end: 报告期结束
+├── news_articles_found: 找到的新闻数量
+├── events_extracted: 提取的事件
+├── contradictions: 发现的矛盾
+├── credibility_score: 可信度得分
+├── critical_issues: 严重问题数量
+├── warnings: 警告数量
+├── info_items: 信息项数量
+├── validation_date: 验证日期
+└── data_sources: 数据来源
+```
+
+#### 3.1.4 ScoredResult（评分结果）
 ```
 ScoredResult
 ├── company_name: 公司名称
@@ -302,15 +353,32 @@ PDF/JSON/Text
   - 转型风险覆盖：+25 分
   - 有财务影响量化：+额外加分
 
+#### 4.1.5 可信度（Credibility）
+**评估内容**：
+- 披露内容与新闻报道的一致性
+- 识别未披露的重要环境事件
+- 检测潜在的漂绿行为
+- 验证声明与实际表现的匹配度
+
+**评分逻辑**：
+- 基础分：100 分
+- 扣分项：
+  - 严重矛盾：-30 分
+  - 警告级矛盾：-15 分
+  - 信息级矛盾：-5 分
+- 最低分：0 分
+- 如无负面新闻：100 分
+
 ### 4.2 综合评分
 ```
 Overall Score = Σ (Dimension Score × Weight)
 
 默认权重：
-- Consistency: 25%
-- Quantification: 25%
-- Completeness: 25%
-- Risk Coverage: 25%
+- Consistency: 20%
+- Quantification: 20%
+- Completeness: 20%
+- Risk Coverage: 20%
+- Credibility: 20%
 ```
 
 ### 4.3 评级标准
@@ -485,6 +553,7 @@ scorer = Scorer(weights=custom_weights)
 ## 10. 未来规划
 
 ### 10.1 短期目标（3-6 个月）
+- [x] 实现新闻一致性验证器（检测漂绿行为）
 - [ ] 支持更多 LLM 提供商（Gemini、Llama）
 - [ ] 增加行业特定验证器（金融、能源、制造）
 - [ ] 优化 PDF 解析性能（支持扫描件 OCR）
@@ -507,10 +576,17 @@ scorer = Scorer(weights=custom_weights)
 ## 11. 项目交付物
 
 ### 11.1 代码
-- **26 个核心模块**（80KB+）
-- **4 个验证器**
+- **31 个核心模块**（90KB+）
+- **5 个验证器**（新增新闻一致性验证器）
 - **3 个适配器**
 - **完整的单元测试**
+- **新闻验证相关模块**：
+  - `news_models.py`：数据模型定义
+  - `news_data_source.py`：新闻数据源管理
+  - `event_extractor.py`：事件提取器
+  - `cross_validator.py`：交叉验证器
+  - `credibility_scorer.py`：可信度评分器
+  - `news_consistency.py`：主验证器类
 
 ### 11.2 文档
 - **README.md**（14KB）：快速入门指南
