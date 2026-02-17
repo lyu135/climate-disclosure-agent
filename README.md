@@ -205,12 +205,92 @@ class DisclosureExtract(BaseModel):
 
 ### Validation Framework
 
-The system uses four core validators to assess disclosure quality:
+The system uses five core validators to assess disclosure quality:
 
 1. **Consistency Validator**: Checks internal consistency between narrative and data
 2. **Quantification Validator**: Evaluates the degree of quantitative disclosure
 3. **Completeness Validator**: Assesses coverage against TCFD/SASB/GRI frameworks
 4. **Risk Coverage Validator**: Verifies climate risk identification and disclosure
+5. **News Consistency Validator**: Cross-validates disclosures with real-world news to detect greenwashing
+
+### News Consistency Validation (Greenwashing Detection)
+
+CDA includes a powerful news consistency validator that cross-references climate disclosures with real-world events to detect potential greenwashing:
+
+**How it works:**
+1. Searches environmental/climate news during the report period (Brave/Google/Bing APIs)
+2. Extracts environmental events using LLM (fines, lawsuits, violations, accidents, regulations)
+3. Cross-validates against disclosure claims to identify contradictions
+4. Calculates credibility score (0-100) based on omissions and misrepresentations
+
+**Event Types Detected:**
+- Fines and penalties
+- Lawsuits and legal actions
+- Environmental accidents
+- Regulatory violations
+- Government investigations
+- NGO reports and criticisms
+
+**Contradiction Types:**
+- **Omission**: Significant events not mentioned in the report
+- **Misrepresentation**: Claims contradicted by news evidence
+- **Timing Mismatch**: Event dates don't align with disclosure timeline
+- **Magnitude Mismatch**: Severity downplayed compared to news reports
+
+**Example Usage:**
+```python
+from cda.validation.news_consistency import NewsConsistencyValidator
+
+# Initialize with news API key
+validator = NewsConsistencyValidator(
+    news_api_key="your_brave_api_key",
+    news_provider="brave"  # or "google", "bing"
+)
+
+# Validate disclosure
+result = validator.validate(disclosure_data)
+
+print(f"Credibility Score: {result.score * 100:.1f}/100")
+print(f"News Articles Found: {result.metadata['news_articles_found']}")
+print(f"Events Extracted: {result.metadata['events_extracted']}")
+print(f"Contradictions: {result.metadata['contradictions_found']}")
+
+# Review findings
+for finding in result.findings:
+    print(f"\n[{finding.severity}] {finding.code}")
+    print(f"  Message: {finding.message}")
+    print(f"  Recommendation: {finding.recommendation}")
+    print(f"  Source: {finding.metadata['source_url']}")
+```
+
+**Configuration:**
+```python
+# Set API keys via environment variables
+export BRAVE_API_KEY="your_key"
+export GOOGLE_NEWS_API_KEY="your_key"
+export BING_NEWS_API_KEY="your_key"
+
+# Or pass directly
+validator = NewsConsistencyValidator(news_api_key="your_key")
+```
+
+**Integration with Main Agent:**
+```python
+from cda import ClimateDisclosureAgent
+
+agent = ClimateDisclosureAgent(
+    enable_news_validation=True,
+    news_api_key="your_brave_api_key"
+)
+
+result = agent.analyze("company_report.pdf", company_name="Acme Corp")
+
+# News validation results included automatically
+news_result = next(
+    vr for vr in result.validation_results 
+    if vr.validator_name == "news_consistency"
+)
+print(f"Credibility: {news_result.score * 100:.1f}/100")
 
 ### External Data Adapters
 
@@ -218,6 +298,7 @@ Adapters allow cross-validation against external databases:
 - SBTi (Science-Based Targets initiative)
 - CDP (Carbon Disclosure Project)
 - Climate TRACE
+- News sources (for credibility validation)
 - Custom data sources
 
 ## Extension Guide

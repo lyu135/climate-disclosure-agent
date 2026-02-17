@@ -25,6 +25,11 @@ class ValidationFinding(BaseModel):
     field: Optional[str] = None   # Affected field
     evidence: Optional[str] = None  # Original text evidence
     recommendation: Optional[str] = None
+    metadata: dict = {}           # Additional metadata
+
+
+# Alias for backward compatibility
+Finding = ValidationFinding
 
 
 class ValidationResult(BaseModel):
