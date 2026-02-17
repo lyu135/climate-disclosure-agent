@@ -1,0 +1,52 @@
+============================================================
+Climate Disclosure Agent - 端到端测试
+============================================================
+✅ API Key 已设置: sk-63f88e37e5d44e89a...
+✅ 测试文件存在: test_data/apple_env_2023.pdf (15.1MB)
+
+📦 导入模块...
+✅ 模块导入成功
+
+🤖 创建 ClimateDisclosureAgent...
+✅ Agent 创建成功
+   - 验证器数量: 4
+   - 适配器数量: 0
+
+📊 分析 Apple 2023 环境报告...
+   (这可能需要 1-2 分钟，LLM 正在提取数据...)
+Input text truncated from 397149 to 10000 characters
+ERROR:root:Validator consistency failed: object of type 'DisclosureExtract' has no len()
+✅ 分析完成！
+   返回类型: <class 'dict'>
+
+============================================================
+📈 分析结果
+============================================================
+公司: Apple Inc.
+综合评分: 64.6/100
+等级: D
+
+各维度得分:
+  - consistency: 0.0/100
+  - quantification: 93.0/100
+  - completeness: 66.7/100
+  - risk_coverage: 100.0/100
+
+发现的问题:
+  - 严重: 1
+  - 警告: 3
+  - 信息: 0
+
+前 5 个发现:
+  1. [CRITICAL] Validator consistency failed: object of type 'DisclosureExtract' has no len()
+  2. [WARNING] Missing quantification: has interim milestones
+  3. [WARNING] TCFD recommended disclosure missing: climate_opportunities
+  4. [WARNING] TCFD recommended disclosure missing: scenario_analysis
+
+摘要: Apple Inc. (2022) scores 65/100 (Grade D). Weakest dimension: consistency.
+
+⚠️  结果为 dict 类型，跳过可视化生成
+
+============================================================
+🎉 测试完成！
+============================================================
