@@ -20,11 +20,10 @@ class Scorer:
     """
 
     DEFAULT_WEIGHTS = {
-        "consistency": 0.20,      # Reduced from 0.25
-        "quantification": 0.20,   # Reduced from 0.30
-        "completeness": 0.20,     # Reduced from 0.25
-        "risk_coverage": 0.20,    # Reduced from 0.20
-        "credibility": 0.20       # New addition
+        "consistency": 0.25,
+        "quantification": 0.30,
+        "completeness": 0.25,
+        "risk_coverage": 0.20,
     }
 
     GRADE_MAP = [
@@ -64,11 +63,7 @@ class Scorer:
         # Internal validator scores
         for result in results:
             if result.score is not None and not result.validator_name.startswith("adapter:"):
-                # Map validator names to dimensions as needed
-                if result.validator_name == "news_consistency":
-                    dimension_scores["credibility"] = result.score / 100.0  # Normalize to 0-1 scale
-                else:
-                    dimension_scores[result.validator_name] = result.score / 100.0  # Normalize to 0-1 scale
+                dimension_scores[result.validator_name] = result.score
 
         # Weighted total score
         overall = sum(
@@ -91,25 +86,17 @@ class Scorer:
                 grade = g
                 break
 
-        # Map dimension scores back to validator names for output
-        output_dimension_scores = {}
-        for dim, score in dimension_scores.items():
-            if dim == "credibility":
-                output_dimension_scores["news_consistency"] = round(score * 100, 1)
-            else:
-                output_dimension_scores[dim] = round(score * 100, 1)
-
         return AggregatedResult(
             company_name=extract.company_name,
             overall_score=round(overall, 1),
             grade=grade,
-            dimension_scores=output_dimension_scores,
+            dimension_scores={k: round(v * 100, 1) for k, v in dimension_scores.items()},
             validation_results=results,
             cross_validation={
                 "adapters_used": [r.validator_name for r in adapter_results],
                 "penalty_applied": cross_validation_penalty
             },
-            summary=self._generate_summary(extract, overall, grade, {k: v*100 for k, v in dimension_scores.items()})
+            summary=self._generate_summary(extract, overall, grade, dimension_scores)
         )
 
     def _generate_summary(self, extract, score, grade, dims) -> str:

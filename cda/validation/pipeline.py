@@ -4,15 +4,10 @@ Validation Pipeline - Orchestrates multiple validators and adapters.
 This module manages the execution sequence of validators and adapters,
 aggregates results, and handles conflicts.
 """
-from typing import List, Optional
+from typing import List
 from cda.validation.base import BaseValidator, ValidationResult
 from cda.adapters.base import BaseAdapter, DataNotAvailableError
 from cda.extraction.schema import DisclosureExtract
-from cda.validation.consistency import ConsistencyValidator
-from cda.validation.quantification import QuantificationValidator
-from cda.validation.completeness import CompletenessValidator
-from cda.validation.risk_coverage import RiskCoverageValidator
-from cda.validation.news_consistency import NewsConsistencyValidator
 
 
 class ValidationPipeline:
@@ -28,34 +23,13 @@ class ValidationPipeline:
     def __init__(self, validators: List[BaseValidator], adapters: List[BaseAdapter] = None):
         """
         Initialize the validation pipeline.
-
+        
         Args:
             validators: List of validators to run
             adapters: List of adapters for cross-validation (optional)
         """
         self.validators = validators
         self.adapters = adapters or []
-
-    @classmethod
-    def default_pipeline(cls, news_api_key: Optional[str] = None, adapters: List[BaseAdapter] = None):
-        """
-        Create a default pipeline with all validators including news consistency.
-
-        Args:
-            news_api_key: API key for news service (optional)
-            adapters: List of adapters for cross-validation (optional)
-
-        Returns:
-            ValidationPipeline with default validators
-        """
-        validators = [
-            ConsistencyValidator(),
-            QuantificationValidator(),
-            CompletenessValidator(),
-            RiskCoverageValidator(),
-            NewsConsistencyValidator(news_api_key=news_api_key)  # New addition
-        ]
-        return cls(validators=validators, adapters=adapters)
 
     def run(
         self,
